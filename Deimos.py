@@ -652,6 +652,7 @@ async def main():
     listener = HotkeyListener()
     foreground_client: Client = None
     background_clients = []
+    gold_tracking = {}  # window handle -> (first gold, monotonic start time)
     await asyncio.sleep(0)
     listener.start()
 
@@ -3464,6 +3465,26 @@ async def main():
                                 ]
                             )
 
+                        case deimosgui.GUICommandType.AddGold:
+                            if not foreground_client:
+                                logger.info("Select a hooked game client before adding local gold.")
+                                continue
+                            amount = com.data
+                            if not isinstance(amount, int) or amount <= 0:
+                                logger.warning("Gold amount must be a positive integer.")
+                                continue
+                            current = await foreground_client.stats.current_gold()
+                            limit = await foreground_client.stats.base_gold_pouch()
+                            if current + amount > min(limit, 2_147_483_647):
+                                logger.warning(f"Cannot add {amount} gold: pouch limit is {limit}.")
+                                continue
+                            await foreground_client.stats.write_current_gold(current + amount)
+                            gold_tracking.pop(foreground_client.window_handle, None)
+                            logger.info(
+                                f"Wrote {current + amount} gold to the local memory of {foreground_client.title}; "
+                                "the server may restore the original balance."
+                            )
+
                         case deimosgui.GUICommandType.LoadAccounts:
                             gui_send_queue.put(
                                 deimosgui.GUICommand(
@@ -3890,6 +3911,30 @@ async def main():
         else:
             while True:
                 await asyncio.sleep(1)
+
+    async def gold_rate_loop():
+        while True:
+            client = get_foreground_client()
+            if client is None:
+                rate = None
+                gold_tracking.clear()
+            else:
+                try:
+                    gold = await client.stats.current_gold()
+                    now = time.monotonic()
+                    handle = client.window_handle
+                    if handle not in gold_tracking:
+                        gold_tracking[handle] = (gold, now)
+                    first_gold, started = gold_tracking[handle]
+                    hours = (now - started) / 3600
+                    rate = (gold - first_gold) / hours if hours >= 1 / 3600 else 0
+                except Exception as error:
+                    logger.debug(f"Could not read gold rate: {error}")
+                    rate = None
+            gui_send_queue.put(
+                deimosgui.GUICommand(deimosgui.GUICommandType.UpdateWindow, ("GoldRate", rate))
+            )
+            await asyncio.sleep(5)
 
     async def potion_usage_loop():
         # Auto potion usage on a per client basis.
@@ -4378,6 +4423,7 @@ async def main():
             entity_detect_combat_loop()
         )
         all_tasks["potion_usage_loop"] = asyncio.create_task(potion_usage_loop())
+        all_tasks["gold_rate_loop"] = asyncio.create_task(gold_rate_loop())
         all_tasks["rpc_loop"] = asyncio.create_task(rpc_loop())
         all_tasks["drop_logging_loop"] = asyncio.create_task(drop_logging_loop())
         all_tasks["client_resizing_loop"] = asyncio.create_task(client_resizing_loop())

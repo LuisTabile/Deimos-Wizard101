@@ -53,6 +53,12 @@ def build_stats_tab(ctx):
     stats_header.addWidget(repo_icon_btn(ctx, ctx.svgs['readme'], tl('tooltip_wiki_stats'), f"{ctx.wiki_base}/Stats"))
     stats_layout.addLayout(stats_header)
 
+    gold_rate = QLabel(tl('gold_per_hour') + ': —')
+    gold_rate.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    gold_rate.setToolTip(tl('gold_per_hour_help'))
+    ctx.widget_tags['GoldRate'] = gold_rate
+    stats_layout.addWidget(gold_rate)
+
     # Radial duel circle widget
     duel_circle = DuelCircleWidget(stroke_color=ctx.stroke_color, text_color=ctx.text_color, bg_color=ctx.bg_color, button_color=ctx.btn_color_hex, tl=tl)
     duel_circle.set_status_message(tl('not_in_combat'))

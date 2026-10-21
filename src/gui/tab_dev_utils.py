@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QScrollArea, QFrame, QGraphicsOpacityEffect,
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIntValidator
 
 from src.gui.commands import GUICommand, GUICommandType
 from src.gui.helpers import centered_label, repo_icon_btn
@@ -57,6 +58,7 @@ def build_dev_utils_tab(ctx):
         (ctx.tl('world_name'),   'WorldInput',         _dev_icons['earth'],  'combo', {'items': worlds, 'default': 'WizardCity'}),
         (ctx.tl('misc'), None, None, 'header', None),
         (ctx.tl('scale'),        'scale',              _dev_icons['scale'],  'line', None),
+        (ctx.tl('gold_amount'),  'GoldAmountInput',    None,                 'line', None),
         (ctx.tl('select_pet_world'), 'PetWorldInput',  _dev_icons['paw'],    'combo', {'items': pet_worlds, 'default': 'WizardCity'}),
     ]
 
@@ -89,8 +91,9 @@ def build_dev_utils_tab(ctx):
 
         icon_label = QLabel()
         icon_label.setFixedSize(20, 20)
-        icon_label.setPixmap(ctx.titlebar_svg_icon(icon_svg, 16).pixmap(16, 16))
-        ctx.tracked_svg_labels.append([icon_label, icon_svg, 16, 'pixmap'])
+        if icon_svg:
+            icon_label.setPixmap(ctx.titlebar_svg_icon(icon_svg, 16).pixmap(16, 16))
+            ctx.tracked_svg_labels.append([icon_label, icon_svg, 16, 'pixmap'])
         row.addWidget(icon_label)
 
         if wtype == 'combo':
@@ -102,6 +105,9 @@ def build_dev_utils_tab(ctx):
             widget.setPlaceholderText(label)
 
         dev_inputs[tag] = widget
+        if tag == 'GoldAmountInput':
+            widget.setValidator(QIntValidator(1, 2_147_483_647, widget))
+            widget.setToolTip(ctx.tl('gold_local_warning'))
         ctx.widget_tags[tag] = widget
         row.addWidget(widget, 1)
 
@@ -192,6 +198,11 @@ def build_dev_utils_tab(ctx):
     def set_scale_callback():
         ctx.send_queue.put(GUICommand(GUICommandType.SetScale, dev_inputs['scale'].text()))
 
+    def add_gold_callback():
+        value = dev_inputs['GoldAmountInput'].text()
+        if value and int(value) > 0:
+            ctx.send_queue.put(GUICommand(GUICommandType.AddGold, int(value)))
+
     # --- Animated stack for individual / mass pages ---
     btn_stack = AnimatedStackedWidget(duration=200)
 
@@ -207,6 +218,9 @@ def build_dev_utils_tab(ctx):
     indiv_col.addWidget(ctx.registry.styled_btn(ctx.tl('go_to_bazaar'), go_to_bazaar_callback))
     indiv_col.addWidget(ctx.registry.styled_btn(ctx.tl('refill_potions'), refill_potions_callback))
     indiv_col.addWidget(ctx.registry.styled_btn(ctx.tl('set_scale'), set_scale_callback))
+    gold_button = ctx.registry.styled_btn(ctx.tl('add_gold_local'), add_gold_callback)
+    gold_button.setToolTip(ctx.tl('gold_local_warning'))
+    indiv_col.addWidget(gold_button)
     btn_stack.addWidget(indiv_page)
 
     # Page 1: Mass buttons

@@ -559,6 +559,9 @@ def manage_gui(send_queue: queue.Queue, recv_queue: queue.Queue, theme_dict, too
                         elif tag == 'calc_school':
                             _last_calc_school[0] = str(value)
                             _update_damage_readout()
+                        elif tag == 'GoldRate':
+                            rate_text = f'{value:+,.0f}' if value is not None else '—'
+                            widget_tags['GoldRate'].setText(f"{tl('gold_per_hour')}: {rate_text}")
                         elif tag == 'stat_viewer':
                             if _pending_view_side[0] is not None:
                                 _update_stat_popup_rows(value)

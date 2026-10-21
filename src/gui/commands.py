@@ -50,6 +50,7 @@ class GUICommandType(Enum):
     SetPlaystyles = auto()
 
     SetScale = auto()
+    AddGold = auto()             # GUI -> Backend: amount to add to foreground client's local gold
 
     PopulateCamera = auto()
     PopulatePlayerGID = auto()   # GUI -> Backend: fetch player GID into CamEntityGIDInput

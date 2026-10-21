@@ -17,6 +17,11 @@ flythrough=飞行路径
 bot=脚本
 combat=战斗
 misc=杂项
+gold_amount=添加金币数量（本地内存）
+add_gold_local=添加本地金币
+gold_local_warning=仅写入所选客户端的内存。服务器可能恢复余额。
+gold_per_hour=金币/小时
+gold_per_hour_help=从连接客户端起每小时金币净变化。消费金币会降低速率。
 console=控制台
 
 # 开关

@@ -456,6 +456,12 @@ async def buy_potions(client: Client, recall: bool = True, original_zone=None):
 
             # buy potions until our potion count has either increased (we may not have enough gold for all potions) or we are at max potions
             while current_potion_count == original_potion_count and current_potion_count < max_potions:
+                if await client.stats.current_gold() < 5000:
+                    logger.info(f'Client {client.title} - Skipping potion purchase: less than 5000 gold')
+                    while await is_visible_by_path(client, potion_shop_base_path):
+                        await click_window_by_path(client, potion_exit_path, True)
+                        await asyncio.sleep(0.125)
+                    break
                 while not await is_visible_by_path(client, potion_shop_base_path):
                     await client.send_key(Keycode.X, 0.1)
                 await asyncio.sleep(0.5)
@@ -463,6 +469,12 @@ async def buy_potions(client: Client, recall: bool = True, original_zone=None):
                 await click_window_by_path(client, potion_fill_all_path, True)
                 await asyncio.sleep(0.25)
 
+                if await client.stats.current_gold() < 5000:
+                    logger.info(f'Client {client.title} - Skipping potion purchase: less than 5000 gold')
+                    while await is_visible_by_path(client, potion_shop_base_path):
+                        await click_window_by_path(client, potion_exit_path, True)
+                        await asyncio.sleep(0.125)
+                    break
                 await click_window_by_path(client, potion_buy_path, True)
                 await asyncio.sleep(0.25)
 
@@ -546,7 +558,7 @@ async def is_potion_needed(client: Client, minimum_mana: int = 16):
 
 async def auto_potions_force_buy(client: Client, mark: bool = False, minimum_mana: int = 16):
     # If we have any missing potions, get potions
-    if await client.stats.potion_charge() < await client.stats.potion_max():
+    if await client.stats.potion_charge() < await client.stats.potion_max() and await client.stats.current_gold() >= 5000:
         # do not recall from potion buy if we were already in the commons - wait for zone change will fail
         if await client.zone_name() == 'WizardCity/WC_Hub':
             recall = False
@@ -656,7 +668,7 @@ async def click_window_until_closed(client: Client, path):
 
 
 async def refill_potions(client: Client, mark: bool = False, recall: bool = True, original_zone=None):
-    if await client.stats.reference_level() >= 6:
+    if await client.stats.reference_level() >= 6 and await client.stats.current_gold() >= 5000:
         if mark:
             if await client.zone_name() != 'WizardCity/WC_Hub':
                 

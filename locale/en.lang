@@ -17,6 +17,11 @@ flythrough=Flythrough
 bot=Bot
 combat=Combat
 misc=Misc
+gold_amount=Gold amount to add (local memory)
+add_gold_local=Add local gold
+gold_local_warning=Writes only to the selected client's memory. The server may restore the balance.
+gold_per_hour=Gold/h
+gold_per_hour_help=Net gold change per hour since this client was hooked. Spending gold lowers the rate.
 console=Console
 
 # Toggles
